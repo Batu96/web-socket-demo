@@ -27,13 +27,17 @@ public class SocketModule {
         // this method will be called when socket connections send message is triggered
         // custom event listener / String.class is the type of data that will be received and, it can be any type
         //server(us) listening to event send-message from client
-        socketIOServer.addEventListener("send-message", Message.class,(client, data, ackSender) -> {
+        socketIOServer.addEventListener("send-message", Message.class, (client, data, ackSender) -> {
             log.info(String.format("SocketID: %s send message: %s", client.getSessionId().toString(), data.getContent()));
             // send receive-event to all connected clients
             // getNamespace() define the namespace of the socket connection
             // client listening to event receive-message from server
-            client.getNamespace().getBroadcastOperations().sendEvent("receive-message", data.getContent()
-                    +" hi from server");
+            client.getNamespace().getAllClients().forEach(id -> {
+                // send message to all connected clients except the sender
+                if (!id.getSessionId().equals(client.getSessionId()))
+                    id.sendEvent("receive-message", data.getContent());
+
             });
+        });
     }
 }
