@@ -23,18 +23,29 @@ public class SocketModule {
             String room = client.getHandshakeData().getSingleUrlParam("room");
             // join room
             client.joinRoom(room);
+
+            client.getNamespace().getRoomOperations(room)
+                    .sendEvent("receive-message", client.getSessionId() + "Welcome to room " + room);
         });
+
         // this method will be called when socket connection end
-        socketIOServer.addDisconnectListener(listener -> {
-            log.info(String.format("SocketID: %s disconnected", listener.getSessionId().toString()));
+        socketIOServer.addDisconnectListener(client -> {
+            log.info(String.format("SocketID: %s disconnected", client.getSessionId().toString()));
+            String room = client.getHandshakeData().getSingleUrlParam("room");
+            client.getNamespace().getRoomOperations(room)
+                    .sendEvent("receive-message", client.getSessionId() + " Disconnect to room " + room);
         });
+
+
         // this method will be called when socket connections send message is triggered
         // custom event listener / String.class is the type of data that will be received and, it can be any type
         //server(us) listening to event send-message from client
-        socketIOServer.addEventListener("send-message", Message.class, (client, data, ackSender) -> {
+        socketIOServer.addEventListener("send-message", Message.class, (client, data, ackSender) ->
+
+        {
             log.info(String.format("SocketID: %s send message: %s", client.getSessionId().toString(), data.getContent()));
-           //get room parameter from url
-           String room = client.getHandshakeData().getSingleUrlParam("room");
+            //get room parameter from url
+            String room = client.getHandshakeData().getSingleUrlParam("room");
             // send receive-event to all connected clients
             // getNamespace() define the namespace of the socket connection
             // client listening to event receive-message from server
