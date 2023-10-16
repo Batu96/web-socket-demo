@@ -17,8 +17,12 @@ public class SocketModule {
         this.socketIOServer = socketIOServer;
         // this method will be called when socket connection start
         // register event listener
-        socketIOServer.addConnectListener(listener -> {// this method takes a parameter of type SocketIOClient
-            log.info(String.format("SocketID: %s connected", listener.getSessionId().toString()));
+        socketIOServer.addConnectListener(client -> {// this method takes a parameter of type SocketIOClient
+            log.info(String.format("SocketID: %s connected", client.getSessionId().toString()));
+            // get room parameter from url
+            String room = client.getHandshakeData().getSingleUrlParam("room");
+            // join room
+            client.joinRoom(room);
         });
         // this method will be called when socket connection end
         socketIOServer.addDisconnectListener(listener -> {
@@ -29,10 +33,13 @@ public class SocketModule {
         //server(us) listening to event send-message from client
         socketIOServer.addEventListener("send-message", Message.class, (client, data, ackSender) -> {
             log.info(String.format("SocketID: %s send message: %s", client.getSessionId().toString(), data.getContent()));
+           //get room parameter from url
+           String room = client.getHandshakeData().getSingleUrlParam("room");
             // send receive-event to all connected clients
             // getNamespace() define the namespace of the socket connection
             // client listening to event receive-message from server
-            client.getNamespace().getAllClients().forEach(id -> {
+            // getRoomOperations(room) define the room of the client
+            client.getNamespace().getRoomOperations(room).getClients().forEach(id -> {
                 // send message to all connected clients except the sender
                 if (!id.getSessionId().equals(client.getSessionId()))
                     id.sendEvent("receive-message", data.getContent());
